@@ -175,7 +175,7 @@ function drawFan() {
   const cy = fanCanvas.height / 2;
   const r = TURBINE_FAN_SIZE / 2 - 5;
 
-  const actualRPM = turbineMax > 0 ? Math.max(0, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN)) * turbineMax : 0;
+  const actualRPM = turbineMax > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineMax : 0;
   const fanSpeed = (actualRPM / 100) * TURBINE_FAN_SPEED;
 
   fctx.clearRect(0, 0, fanCanvas.width, fanCanvas.height);
@@ -315,7 +315,7 @@ function update(dt) {
     }
   }
 
-  const turbineRPM = turbineMax > 0 ? Math.max(0, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN)) * turbineMax : 0;
+  const turbineRPM = turbineMax > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineMax : 0;
   const turbineCool = (turbineRPM / 100) * TURBINE_COOL_MAX;
   if (turbineCool > 0) {
     for (let r = 0; r < ROWS; r++) {
@@ -510,9 +510,10 @@ function drawGraph() {
   document.getElementById('neutronCount').textContent = 'Neutrons: ' + neutrons.length;
   document.getElementById('avgTemp').textContent = 'Temperature: ' + Math.round(currentGraphTemp) + '°C';
 
-  const displayRPM = turbineMax > 0 ? Math.max(0, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN)) * turbineMax : 0;
-  document.getElementById('turbineRPM').textContent = 'RPM: ' + Math.round(displayRPM);
+  const displayRPM = turbineMax > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineMax : 0;
+  document.getElementById('turbineRPM').textContent = 'RPM: ' + Math.round(displayRPM * 15);
   document.getElementById('turbinePower').textContent = 'Power: ' + Math.round(displayRPM * TURBINE_POWER_FACTOR) + ' MW';
+  document.getElementById('turbinePercent').textContent = Math.round(displayRPM) + '%';
 
   if (!gameOver) {
     const currentPower = Math.round(displayRPM * TURBINE_POWER_FACTOR);

@@ -37,9 +37,9 @@ const AUTO_TEMP_HIGH = 200;                // odd rods fully down / нечётн
 // --- Turbine / Турбина ---
 const TURBINE_TEMP_MIN = 30;               // min temp for turbine to spin / мин. температура для работы турбины
 const TURBINE_TEMP_MAX = 100;              // max temp for full power / макс. температура для полной мощности
-const TURBINE_POWER_FACTOR = 10;          // MW per 1% RPM / МВт на 1% оборотов
+const TURBINE_POWER_FACTOR = 15;          // MW per 1% RPM / МВт на 1% оборотов
 const TURBINE_COOL_MAX = 0.2;              // max cooling from turbine (°C/sec) at 100% / макс. охлаждение от турбины (°C/сек) при 100%
-const TURBINE_FAN_SPEED = 5;              // fan rotations per second at 100% / оборотов вентилятора в секунду при 100%
+const TURBINE_FAN_SPEED = 2;              // fan rotations per second at 100% / оборотов вентилятора в секунду при 100%
 const TURBINE_FAN_SIZE = 60;               // fan diameter in pixels / диаметр вентилятора в пикселях
 
 // --- Scoring / Очки ---
