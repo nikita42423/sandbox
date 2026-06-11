@@ -31,8 +31,8 @@ const SECTOR_URANIUM_MAX = 10;             // uranium count for minimum speed / 
 
 // --- Auto Control / Автоуправление ---
 const AUTO_TEMP_BASE = 24;                 // base temperature (all rods up) / базовая температура (стержни подняты)
-const AUTO_TEMP_MID = 150;                  // even rods fully down / чётные стержни полностью опущены
-const AUTO_TEMP_HIGH = 200;                // odd rods fully down / нечётные стержни полностью опущены
+const AUTO_TEMP_MID = 120;                  // even rods fully down / чётные стержни полностью опущены
+const AUTO_TEMP_HIGH = 170;                // odd rods fully down / нечётные стержни полностью опущены
 
 // --- Turbine / Турбина ---
 const TURBINE_TEMP_MIN = 30;               // min temp for turbine to spin / мин. температура для работы турбины
