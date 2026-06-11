@@ -7,6 +7,9 @@ const STEP = CELL + GAP;
 canvas.width = COLS * STEP + GAP;
 canvas.height = ROWS * STEP + GAP;
 
+graphCanvas.width = canvas.width;
+graphCanvas.height = 150;
+
 const GRAPH_MAX_POINTS = 1200; // 20 sec at 60fps
 const GRAPH_PADDING = 40;
 
