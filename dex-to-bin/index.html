@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Десятичное в Двоичное</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
+            font-size: 1.2rem;
+        }
+
+        .header span {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        .target-number {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+
+        .timer-bar {
+            width: 100%;
+            max-width: 600px;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00cc66);
+            transition: width 0.1s linear;
+            border-radius: 4px;
+        }
+
+        .timer-fill.warning {
+            background: linear-gradient(90deg, #ff6b6b, #ee5a5a);
+        }
+
+        .buttons-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .bit-button {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bit-button.off {
+            background: linear-gradient(145deg, #c0392b, #a93226);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(192,57,43,0.4);
+        }
+
+        .bit-button.on {
+            background: linear-gradient(145deg, #27ae60, #1e8449);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(39,174,96,0.4);
+            transform: scale(1.05);
+        }
+
+        .bit-button:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+
+        .bit-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .bit-button .value {
+            transition: opacity 0.3s;
+        }
+
+        .bit-button.hide-value .value {
+            opacity: 0;
+        }
+
+        .indicator {
+            position: absolute;
+            top: -25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #aaa;
+            transition: color 0.2s;
+        }
+
+        .indicator.active {
+            color: #ffd700;
+        }
+
+        .operator {
+            font-size: 1.5rem;
+            color: #888;
+        }
+
+        .equals-sign {
+            font-size: 2rem;
+            color: #ffd700;
+            margin-left: 10px;
+            transition: opacity 0.3s;
+        }
+
+        .sum-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #00ff88;
+            min-width: 60px;
+            text-align: center;
+            transition: opacity 0.3s;
+        }
+
+        .check-btn {
+            margin-top: 30px;
+            padding: 15px 50px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            color: #fff;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(52,152,219,0.4);
+        }
+
+        .check-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(52,152,219,0.6);
+        }
+
+        .check-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .check-btn.correct {
+            background: linear-gradient(145deg, #27ae60, #1e8449);
+            box-shadow: 0 4px 20px rgba(39,174,96,0.6);
+        }
+
+        .check-btn.wrong {
+            background: linear-gradient(145deg, #c0392b, #a93226);
+            box-shadow: 0 4px 20px rgba(192,57,43,0.6);
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .message h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .message p {
+            color: #aaa;
+        }
+
+        .level-up {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255,215,0,0.8);
+            animation: levelUp 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        @keyframes levelUp {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5) translateY(-50px); }
+        }
+
+        .victory {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.9);
+            z-index: 200;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .victory h1 {
+            font-size: 4rem;
+            color: #ffd700;
+            text-shadow: 0 0 40px rgba(255,215,0,0.8);
+            margin-bottom: 20px;
+        }
+
+        .victory p {
+            font-size: 1.5rem;
+            color: #aaa;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            animation: confettiFall 3s linear forwards;
+            z-index: 300;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span>Счёт: <strong id="score">0</strong></span>
+        <span>Уровень: <strong id="level">1</strong></span>
+    </div>
+
+    <div class="timer-bar" id="timerBar">
+        <div class="timer-fill" id="timerFill"></div>
+    </div>
+
+    <div class="target-number" id="targetNumber">0</div>
+
+    <div class="buttons-container" id="buttonsContainer">
+        <div class="bit-button off" data-value="128">
+            <span class="indicator">0</span>
+            <span class="value">128</span>
+        </div>
+        <span class="operator">+</span>
+        <div class="bit-button off" data-value="64">
+            <span class="indicator">0</span>
+            <span class="value">64</span>
+        </div>
+        <span class="operator">+</span>
+        <div class="bit-button off" data-value="32">
+            <span class="indicator">0</span>
+            <span class="value">32</span>
+        </div>
+        <span class="operator">+</span>
+        <div class="bit-button off" data-value="16">
+            <span class="indicator">0</span>
+            <span class="value">16</span>
+        </div>
+        <span class="operator">+</span>
+        <div class="bit-button off" data-value="8">
+            <span class="indicator">0</span>
+            <span class="value">8</span>
+        </div>
+        <span class="operator">+</span>
+        <div class="bit-button off" data-value="4">
+            <span class="indicator">0</span>
+            <span class="value">4</span>
+        </div>
+        <span class="operator">+</span>
+        <div class="bit-button off" data-value="2">
+            <span class="indicator">0</span>
+            <span class="value">2</span>
+        </div>
+        <span class="operator">+</span>
+        <div class="bit-button off" data-value="1">
+            <span class="indicator">0</span>
+            <span class="value">1</span>
+        </div>
+        <span class="equals-sign" id="equalsSign">=</span>
+        <span class="sum-display" id="sumDisplay">0</span>
+    </div>
+
+    <button class="check-btn" id="checkBtn">Проверить</button>
+
+    <script>
+        const LEVELS = [
+            { minScore: 0, min: 0, max: 7, showTimer: false, showSum: true, showValues: true },
+            { minScore: 3, min: 0, max: 15, showTimer: false, showSum: true, showValues: true },
+            { minScore: 6, min: 2, max: 31, showTimer: false, showSum: true, showValues: true },
+            { minScore: 10, min: 4, max: 63, showTimer: false, showSum: true, showValues: true },
+            { minScore: 15, min: 8, max: 127, showTimer: false, showSum: true, showValues: true },
+            { minScore: 20, min: 16, max: 255, showTimer: false, showSum: true, showValues: true },
+            { minScore: 25, min: 32, max: 255, showTimer: true, showSum: true, showValues: true },
+            { minScore: 30, min: 32, max: 255, showTimer: false, showSum: false, showValues: true },
+            { minScore: 35, min: 32, max: 255, showTimer: false, showSum: false, showValues: false },
+            { minScore: 40, min: 32, max: 255, showTimer: true, showSum: false, showValues: false }
+        ];
+
+        let score = 0;
+        let level = 1;
+        let targetNumber = 0;
+        let currentSum = 0;
+        let isLocked = false;
+        let timerInterval = null;
+        let timerStart = 0;
+        let timerDuration = 15000;
+        let gameWon = false;
+
+        const targetEl = document.getElementById('targetNumber');
+        const sumEl = document.getElementById('sumDisplay');
+        const scoreEl = document.getElementById('score');
+        const levelEl = document.getElementById('level');
+        const checkBtn = document.getElementById('checkBtn');
+        const timerBar = document.getElementById('timerBar');
+        const timerFill = document.getElementById('timerFill');
+        const equalsSign = document.getElementById('equalsSign');
+
+        const bitButtons = document.querySelectorAll('.bit-button');
+
+        function getRandomNumber(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateNewNumber() {
+            let newNumber;
+            do {
+                const levelConfig = LEVELS[level - 1];
+                newNumber = getRandomNumber(levelConfig.min, levelConfig.max);
+            } while (newNumber === targetNumber && level > 1);
+            return newNumber;
+        }
+
+        function updateDisplay() {
+            targetEl.textContent = targetNumber;
+            sumEl.textContent = currentSum;
+            scoreEl.textContent = score;
+            levelEl.textContent = level;
+            updateLevelVisuals();
+        }
+
+        function updateLevelVisuals() {
+            const config = LEVELS[level - 1];
+
+            timerBar.style.display = config.showTimer ? 'block' : 'none';
+            equalsSign.style.opacity = config.showSum ? '1' : '0';
+            sumEl.style.opacity = config.showSum ? '1' : '0';
+
+            bitButtons.forEach(btn => {
+                if (config.showValues) {
+                    btn.classList.remove('hide-value');
+                } else {
+                    btn.classList.add('hide-value');
+                }
+            });
+        }
+
+        function checkLevelUp() {
+            const nextLevel = level + 1;
+            if (nextLevel <= 10 && score >= LEVELS[nextLevel - 1].minScore) {
+                level = nextLevel;
+                showLevelUp();
+                updateLevelVisuals();
+
+                if (level === 10) {
+                    startTimer();
+                }
+            }
+
+            if (score >= 45 && !gameWon) {
+                gameWon = true;
+                showVictory();
+            }
+        }
+
+        function showLevelUp() {
+            const levelUpEl = document.createElement('div');
+            levelUpEl.className = 'level-up';
+            levelUpEl.textContent = `Уровень ${level}!`;
+            document.body.appendChild(levelUpEl);
+            setTimeout(() => levelUpEl.remove(), 1000);
+        }
+
+        function toggleBit(button) {
+            if (isLocked || button.disabled) return;
+
+            const value = parseInt(button.dataset.value);
+            const indicator = button.querySelector('.indicator');
+
+            if (button.classList.contains('off')) {
+                button.classList.remove('off');
+                button.classList.add('on');
+                indicator.textContent = '1';
+                indicator.classList.add('active');
+                currentSum += value;
+            } else {
+                button.classList.remove('on');
+                button.classList.add('off');
+                indicator.textContent = '0';
+                indicator.classList.remove('active');
+                currentSum -= value;
+            }
+
+            updateDisplay();
+        }
+
+        function lockButtons(duration) {
+            isLocked = true;
+            bitButtons.forEach(btn => btn.disabled = true);
+            checkBtn.disabled = true;
+            setTimeout(() => {
+                isLocked = false;
+                bitButtons.forEach(btn => btn.disabled = false);
+                checkBtn.disabled = false;
+            }, duration);
+        }
+
+        function resetButtons() {
+            bitButtons.forEach(btn => {
+                btn.classList.remove('on');
+                btn.classList.add('off');
+                const indicator = btn.querySelector('.indicator');
+                indicator.textContent = '0';
+                indicator.classList.remove('active');
+            });
+            currentSum = 0;
+            updateDisplay();
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timerBar.style.display = 'none';
+        }
+
+        function startNewRound() {
+            stopTimer();
+            resetButtons();
+            targetNumber = generateNewNumber();
+            updateDisplay();
+
+            const config = LEVELS[level - 1];
+            if (config.showTimer) {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            timerBar.style.display = 'block';
+            timerStart = Date.now();
+
+            timerInterval = setInterval(() => {
+                const elapsed = Date.now() - timerStart;
+                const remaining = Math.max(0, timerDuration - elapsed);
+                const percentage = (remaining / timerDuration) * 100;
+
+                timerFill.style.width = percentage + '%';
+
+                if (remaining <= 5000) {
+                    timerFill.classList.add('warning');
+                } else {
+                    timerFill.classList.remove('warning');
+                }
+
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    gameOver();
+                }
+            }, 100);
+        }
+
+        function resetTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerStart = Date.now();
+            timerFill.style.width = '100%';
+            timerFill.classList.remove('warning');
+        }
+
+        function gameOver() {
+            bitButtons.forEach(btn => btn.disabled = true);
+            checkBtn.disabled = true;
+
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.style.display = 'block';
+            message.innerHTML = '<h2>Время вышло!</h2><p>Обновите страницу</p>';
+            document.body.appendChild(message);
+        }
+
+        function showVictory() {
+            const victory = document.createElement('div');
+            victory.className = 'victory';
+            victory.innerHTML = '<h1>Молодец!</h1><p>Вы прошли все уровни. Кузнецов Никита гордится тобой!</p>';
+            document.body.appendChild(victory);
+
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => createConfetti(), i * 50);
+            }
+        }
+
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = ['#ffd700', '#ff6b6b', '#00ff88', '#3498db', '#9b59b6'][Math.floor(Math.random() * 5)];
+            confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 3000);
+        }
+
+        function checkAnswer() {
+            if (isLocked) return;
+
+            lockButtons(500);
+
+            if (currentSum === targetNumber) {
+                checkBtn.classList.add('correct');
+                score++;
+                updateDisplay();
+                checkLevelUp();
+
+                setTimeout(() => {
+                    checkBtn.classList.remove('correct');
+                    const config = LEVELS[level - 1];
+                    if (config.showTimer) {
+                        resetTimer();
+                    }
+                    startNewRound();
+                }, 500);
+            } else {
+                checkBtn.classList.add('wrong');
+                setTimeout(() => {
+                    checkBtn.classList.remove('wrong');
+                }, 500);
+            }
+        }
+
+        bitButtons.forEach(btn => {
+            btn.addEventListener('click', () => toggleBit(btn));
+        });
+
+        checkBtn.addEventListener('click', checkAnswer);
+
+        startNewRound();
+    </script>
+</body>
+</html>

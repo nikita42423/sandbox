@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuclear Reactor Simulation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <button id="helpToggle" class="help-toggle">?</button>
+  <div id="helpPanel" class="help-panel hidden">
+    <div class="help-header">
+      <h3>Как играть</h3>
+      <button id="helpClose" class="help-close">&times;</button>
+    </div>
+    <div class="help-content">
+      <p><b>Цель:</b> Поддерживай мощность турбины вблизи нужного значения из регламента.</p>
+
+      <p><b>Стержни:</b></p>
+      <ul>
+        <li><b>#1 Rods</b> — управляет чётными стержнями (2, 4, 6...)</li>
+        <li><b>#2 Rods</b> — управляет нечётными стержнями (1, 3, 5...)</li>
+        <li><b>All Rods</b> — управляет всеми стержнями</li>
+        <li><b>Auto</b> — автоматическое управление по температуре</li>
+      </ul>
+      <p>Стержни поглощают нейтроны и замедляют деление урана.</p>
+
+      <p><b>Турбина:</b></p>
+      <ul>
+        <li>Преобразует тепло реактора в электричество (МВт)</li>
+        <li>Чем выше обороты — тем больше охлаждение</li>
+        <li>Работает от 30°C, максимум при 100°C</li>
+      </ul>
+
+      <p><b>Ксенон-135:</b></p>
+      <ul>
+        <li>Появляется из отработанного топлива</li>
+        <li>Поглощает нейтроны (тормозит реакцию)</li>
+        <li>Распадается через 20 сек</li>
+      </ul>
+
+      <p><b>Опасность:</b></p>
+      <ul>
+        <li><span style="color:#FF9800">⚠️ 180°C</span> — предупреждение</li>
+        <li><span style="color:#D32F2F">☢ 200°C</span> — авария! Стержни не работают</li>
+      </ul>
+
+      <p><b>Очки:</b></p>
+      <ul>
+        <li>3 раунда по 60 сек</li>
+        <li>Идеально (&lt;5%): 20 очков/сек</li>
+        <li>Хорошо (5-15%): 1-10 очков/сек</li>
+        <li>Плохо (&gt;15%): 0 очков</li>
+      </ul>
+    </div>
+  </div>
+  <h1>Nuclear Reactor Simulation</h1>
+  <div id="warning" class="warning hidden"></div>
+  <canvas id="reactor"></canvas>
+  <canvas id="graph" width="600" height="150"></canvas>
+  <div class="stats">
+    <span id="neutronCount">Neutrons: 0</span>
+    <span id="avgTemp">Temperature: 0°C</span>
+  </div>
+  <div class="controls">
+    <button id="reset">Reset</button>
+    <button id="autoBtn">Auto</button>
+    <div class="rod-control">
+      <label>#1 Rods:</label>
+      <input type="range" id="rodSliderEven" min="0" max="100" value="0">
+      <span class="rod-value" id="rodValueEven">0%</span>
+    </div>
+    <div class="rod-control">
+      <label>#2 Rods:</label>
+      <input type="range" id="rodSliderOdd" min="0" max="100" value="100">
+      <span class="rod-value" id="rodValueOdd">100%</span>
+    </div>
+    <div class="rod-control">
+      <label>All Rods:</label>
+      <input type="range" id="rodSliderAll" min="0" max="100" value="100">
+      <span class="rod-value" id="rodValueAll">100%</span>
+    </div>
+  </div>
+  <div class="legend">
+    <span><span style="color:#000;">●</span> Neutron</span>
+    <span><span style="color:#1976D2;">●</span> Uranium-235</span>
+    <span><span style="color:#999;">●</span> Spent Fuel</span>
+    <span><span style="color:#1a1a1a;">⬤</span> Xenon-135</span>
+    <span><span style="color:#333;">|</span> Control Rod</span>
+    <span><span style="color:#4FC3F7;">■</span> Water (cold)</span>
+    <span><span style="color:#F44336;">■</span> Water (hot)</span>
+  </div>
+  <div class="turbine-section">
+    <div class="turbine-controls">
+      <div class="rod-control">
+        <label>Turbine:</label>
+        <input type="range" id="turbineSlider" min="0" max="100" value="0">
+        <span class="rod-value" id="turbineValue">0%</span>
+      </div>
+      <div class="turbine-stats">
+        <span id="turbineRPM">RPM: 0</span>
+        <span id="turbinePower">Power: 0 MW</span>
+      </div>
+    </div>
+    <canvas id="fanCanvas" width="70" height="70"></canvas>
+  </div>
+  <div id="scorePanel" class="score-panel">
+    <div id="scoreStatus" class="score-status bad">Ожидание</div>
+    <div class="score-row">
+      <span class="score-label">Раунд:</span>
+      <span id="roundDisplay" class="score-value">1/3</span>
+    </div>
+    <div class="score-row">
+      <span class="score-label">Осталось:</span>
+      <span id="roundTimerDisplay" class="score-value timer">60</span>
+    </div>
+    <div class="score-row">
+      <span class="score-label">Нужное значение:</span>
+      <span id="targetValue" class="score-value">800 MW</span>
+    </div>
+    <div class="score-row">
+      <span class="score-label">Текущее значение:</span>
+      <span id="currentPowerDisplay" class="score-value">0 MW</span>
+    </div>
+    <div class="score-row">
+      <span class="score-label">Очки:</span>
+      <span id="scoreDisplay" class="score-value">0</span>
+    </div>
+  </div>
+  <div id="gameOverModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Игра окончена!</h2>
+      <div class="final-score">Очки: <span id="finalScore">0</span></div>
+      <div class="modal-buttons">
+        <button id="btnContinue">Продолжить</button>
+        <button id="btnFinish">Закончить</button>
+      </div>
+    </div>
+  </div>
+  <script src="config.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
