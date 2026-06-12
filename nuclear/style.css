@@ -653,6 +653,18 @@ input[type="range"] {
   display: none;
 }
 
+.mobile-only {
+  display: none;
+}
+
+#mobileNeutrons {
+  color: #4FC3F7;
+}
+
+#mobileTemp {
+  color: #FF9800;
+}
+
 @media (max-width: 768px) {
   .main-layout {
     flex-direction: column;
@@ -682,5 +694,9 @@ input[type="range"] {
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid #444;
+  }
+
+  .mobile-only {
+    display: inline;
   }
 }

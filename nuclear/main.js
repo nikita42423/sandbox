@@ -716,8 +716,8 @@ function drawGraph() {
 
   const mobileNeutronsEl = document.getElementById('mobileNeutrons');
   const mobileTempEl = document.getElementById('mobileTemp');
-  if (mobileNeutronsEl) mobileNeutronsEl.textContent = neutrons.length;
-  if (mobileTempEl) mobileTempEl.textContent = Math.round(currentGraphTemp) + '°C';
+  if (mobileNeutronsEl) mobileNeutronsEl.textContent = 'Нейтроны: ' + neutrons.length;
+  if (mobileTempEl) mobileTempEl.textContent = 'Температура: ' + Math.round(currentGraphTemp) + '°C';
 
   const displayRPM = turbineCurrent > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineCurrent : 0;
   document.getElementById('turbineRPM').textContent = 'Об/мин: ' + Math.round(displayRPM * 15);
