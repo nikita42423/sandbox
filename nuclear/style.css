@@ -687,6 +687,14 @@ input[type="range"] {
     align-self: stretch;
   }
 
+  .right-panel > .legend { order: 3; }
+  .right-panel > .controls-row { order: 5; }
+  .right-panel > :nth-child(3) { order: 6; }
+  .right-panel > :nth-child(4) { order: 7; }
+  .right-panel > :nth-child(5) { order: 0; }
+  .right-panel > .turbine-section { order: 1; }
+  .right-panel > .score-panel { order: 2; }
+
   .mobile-stats {
     display: flex;
     flex-direction: column;
