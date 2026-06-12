@@ -8,7 +8,7 @@ const ROWS = 20;                           // grid height (rows) / высота 
 const NUM_SECTORS = 8;                     // number of sectors (1 sector = 20×5) / количество секций (1 секция = 20×5)
 const SECTOR_COLS = 5;                     // columns per sector / колонок на секцию
 const COLS = NUM_SECTORS * SECTOR_COLS;    // total columns (auto-computed) / всего колонок (вычисляется автоматически)
-const CELL = 12;                           // cell size in pixels / размер клетки в пикселях
+const CELL = 15;                           // cell size in pixels / размер клетки в пикселях
 const GAP = 1.2;                           // gap between cells / расстояние между клетками
 
 // --- Control Rods / Управляющие стержни ---
@@ -25,7 +25,7 @@ const SECTOR_NEUTRON_MAX = 2000;          // max ms between neutron spawns per s
 
 // --- Sector Speed / Скорость секции (чем больше урана — тем медленнее) ---
 const SECTOR_SPEED_MAX = 2.0;              // speed multiplier at 0 uranium / множитель скорости при 0 урана
-const SECTOR_SPEED_MIN = 0.5;              // speed multiplier at max uranium / множитель скорости при макс. урана
+const SECTOR_SPEED_MIN = 0.05;              // speed multiplier at max uranium / множитель скорости при макс. урана
 const SECTOR_URANIUM_NORMAL = 5;           // uranium count for normal speed (1.0) / количество урана для нормальной скорости
 const SECTOR_URANIUM_MAX = 10;             // uranium count for minimum speed / количество урана для мин. скорости
 
@@ -59,8 +59,10 @@ const ROUND_TARGETS = [
 const FISSION_NEUTRONS = 3;                // neutrons released per fission / нейтронов при делении
 const FISSION_HEAT_BONUS = 20;
            // heat added at fission site (%) / тепло на месте деления (%)
-const URANIUM_TIMER_MIN = 2000;            // min ms for spent fuel → uranium / мин. мс от отработанного топлива до урана
+const URANIUM_TIMER_MIN = 1000;            // min ms for spent fuel → uranium / мин. мс от отработанного топлива до урана
 const URANIUM_TIMER_MAX = 20000;           // max ms for spent fuel → uranium / макс. мс от отработанного топлива до урана
+const URANIUM_TIMER_ACCIDENT_MIN = 500;    // min ms at 250°C+ / мин. мс при 250°C+
+const URANIUM_TIMER_ACCIDENT_MAX = 3000;    // max ms at 250°C+ / макс. мс при 250°C+
 const URANIUM_SPAWN_MIN = 500;            // min ms for gray cell → uranium on init / мин. мс от серой клетки до урана при старте
 const URANIUM_SPAWN_MAX = 40000;          // max ms for gray cell → uranium on init / макс. мс от серой клетки до урана при старте
 

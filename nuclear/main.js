@@ -36,8 +36,12 @@ let tempHistory = [];
 let frameCount = 0;
 let currentGraphTemp = 24;
 let autoMode = false;
-let turbineMax = 0;
+let turbineTarget = 0;
+let turbineCurrent = 0;
+let turbineBroken = false;
+let rodsBroken = false;
 let fanAngle = 0;
+let neutronSphereAngle = 0;
 let currentRound = 0;
 let targetValue = 800;
 let roundTimer = ROUND_DURATION;
@@ -89,15 +93,22 @@ function init() {
   rodCurrentOdd = 100;
   rodTargetOdd = 100;
   document.getElementById('rodSliderEven').value = 100;
+  document.getElementById('rodSliderEven').disabled = false;
   document.getElementById('rodValueEven').textContent = '100%';
   document.getElementById('rodSliderOdd').value = 100;
+  document.getElementById('rodSliderOdd').disabled = false;
   document.getElementById('rodValueOdd').textContent = '100%';
   rodCurrentAll = 100;
   rodTargetAll = 100;
   document.getElementById('rodSliderAll').value = 100;
+  document.getElementById('rodSliderAll').disabled = false;
   document.getElementById('rodValueAll').textContent = '100%';
-  turbineMax = 0;
+  turbineTarget = 0;
+  turbineCurrent = 0;
+  turbineBroken = false;
+  rodsBroken = false;
   document.getElementById('turbineSlider').value = 0;
+  document.getElementById('turbineSlider').disabled = false;
   document.getElementById('turbineValue').textContent = '0%';
   currentRound = 0;
   targetValue = getRandomTarget();
@@ -145,7 +156,7 @@ function isNeutronHitRod(nx, ny, rodIdx) {
     const row = Math.floor(ny / STEP);
     if (row >= 0 && row < ROWS) {
       const isEven = (rodIdx + 1) % 2 === 0;
-      const rodHeight = Math.floor(((isEven ? rodCurrentEven : rodCurrentOdd) / 100) * ROWS);
+    const rodHeight = ((isEven ? rodCurrentEven : rodCurrentOdd) / 100) * ROWS;
       if (row < rodHeight) {
         return true;
       }
@@ -178,18 +189,18 @@ function drawFan() {
   const cy = fanCanvas.height / 2;
   const r = TURBINE_FAN_SIZE / 2 - 5;
 
-  const actualRPM = turbineMax > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineMax : 0;
+  const actualRPM = turbineCurrent > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineCurrent : 0;
   const fanSpeed = (actualRPM / 100) * TURBINE_FAN_SPEED;
 
   fctx.clearRect(0, 0, fanCanvas.width, fanCanvas.height);
 
-  fctx.fillStyle = '#555';
+  fctx.fillStyle = '#888';
   fctx.beginPath();
   fctx.arc(cx, cy, 4, 0, Math.PI * 2);
   fctx.fill();
 
   const blades = 4;
-  fctx.strokeStyle = '#333';
+  fctx.strokeStyle = '#aaa';
   fctx.lineWidth = 3;
   for (let i = 0; i < blades; i++) {
     const a = fanAngle + (i * Math.PI * 2) / blades;
@@ -199,13 +210,168 @@ function drawFan() {
     fctx.stroke();
   }
 
-  fctx.strokeStyle = '#999';
+  fctx.strokeStyle = '#555';
   fctx.lineWidth = 2;
   fctx.beginPath();
   fctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
   fctx.stroke();
 
   fanAngle += (fanSpeed / 60) * Math.PI * 2;
+}
+
+function drawNeutronSphere() {
+  const c = document.getElementById('neutronSphere');
+  const sctx = c.getContext('2d');
+  const cx = c.width / 2;
+  const cy = c.height / 2;
+  const r = 40;
+
+  sctx.clearRect(0, 0, c.width, c.height);
+
+  const grad = sctx.createRadialGradient(cx - 10, cy - 12, 2, cx, cy, r);
+  grad.addColorStop(0, '#666');
+  grad.addColorStop(0.3, '#333');
+  grad.addColorStop(0.7, '#111');
+  grad.addColorStop(1, '#000');
+  sctx.fillStyle = grad;
+  sctx.beginPath();
+  sctx.arc(cx, cy, r, 0, Math.PI * 2);
+  sctx.fill();
+
+  for (let i = 0; i < 20; i++) {
+    const a = neutronSphereAngle + (i * Math.PI * 2) / 20;
+    const br = r - 2 + Math.sin(a * 3 + i) * 3 + Math.cos(a * 5 + i * 2) * 2;
+    const bx = cx + Math.cos(a) * br;
+    const by = cy + Math.sin(a) * br;
+    const bg = sctx.createRadialGradient(bx, by, 0, bx, by, 4);
+    bg.addColorStop(0, 'rgba(80,80,80,0.4)');
+    bg.addColorStop(1, 'rgba(0,0,0,0)');
+    sctx.fillStyle = bg;
+    sctx.beginPath();
+    sctx.arc(bx, by, 4, 0, Math.PI * 2);
+    sctx.fill();
+  }
+
+  const hl = sctx.createRadialGradient(cx - 12, cy - 14, 1, cx - 12, cy - 14, 18);
+  hl.addColorStop(0, 'rgba(200,200,200,0.3)');
+  hl.addColorStop(1, 'rgba(200,200,200,0)');
+  sctx.fillStyle = hl;
+  sctx.beginPath();
+  sctx.arc(cx - 12, cy - 14, 18, 0, Math.PI * 2);
+  sctx.fill();
+
+  for (let i = 0; i < 5; i++) {
+    const a = neutronSphereAngle * 0.7 + (i * Math.PI * 2) / 5;
+    const pr = r * 0.55 + Math.sin(a * 2) * 6;
+    const px = cx + Math.cos(a) * pr;
+    const py = cy + Math.sin(a) * pr;
+    sctx.fillStyle = 'rgba(40,40,40,0.5)';
+    sctx.beginPath();
+    sctx.arc(px, py, 1.5, 0, Math.PI * 2);
+    sctx.fill();
+  }
+
+  neutronSphereAngle += 0.015;
+}
+
+function drawTempGauge() {
+  const c = document.getElementById('tempGauge');
+  const tctx = c.getContext('2d');
+  c.height = c.clientHeight;
+  const w = c.width;
+  const h = c.height;
+
+  tctx.clearRect(0, 0, w, h);
+
+  const barX = 18;
+  const barW = 16;
+  const barTop = 8;
+  const barBot = h - 8;
+  const barH = barBot - barTop;
+
+  tctx.fillStyle = '#111';
+  tctx.beginPath();
+  tctx.roundRect(barX - 2, barTop - 2, barW + 4, barH + 4, 8);
+  tctx.fill();
+
+  const maxTemp = 300;
+  const fillRatio = Math.min(1, currentGraphTemp / maxTemp);
+  const fillH = fillRatio * barH;
+
+  const barGrad = tctx.createLinearGradient(0, barBot, 0, barTop);
+  barGrad.addColorStop(0, '#1565C0');
+  barGrad.addColorStop(0.2, '#4CAF50');
+  barGrad.addColorStop(0.5, '#FFC107');
+  barGrad.addColorStop(0.6, '#FF9800');
+  barGrad.addColorStop(0.67, '#F44336');
+  barGrad.addColorStop(1, '#B71C1C');
+
+  tctx.fillStyle = barGrad;
+  tctx.beginPath();
+  tctx.roundRect(barX, barBot - fillH, barW, fillH, [0, 0, 6, 6]);
+  tctx.fill();
+
+  tctx.strokeStyle = '#555';
+  tctx.lineWidth = 2;
+  tctx.beginPath();
+  tctx.roundRect(barX - 2, barTop - 2, barW + 4, barH + 4, 8);
+  tctx.stroke();
+
+  const marks = [
+    { temp: 0, color: '#888' },
+    { temp: 100, color: '#888' },
+    { temp: 180, color: '#FF9800' },
+    { temp: 200, color: '#D32F2F' },
+    { temp: 300, color: '#888' }
+  ];
+
+  tctx.font = '9px monospace';
+  tctx.textAlign = 'right';
+  for (const m of marks) {
+    const my = barBot - (m.temp / maxTemp) * barH;
+    tctx.strokeStyle = m.color;
+    tctx.lineWidth = 1;
+    if (m.temp === 180 || m.temp === 200) {
+      tctx.setLineDash([2, 2]);
+    } else {
+      tctx.setLineDash([]);
+    }
+    tctx.beginPath();
+    tctx.moveTo(barX - 1, my);
+    tctx.lineTo(barX + barW + 1, my);
+    tctx.stroke();
+    tctx.fillStyle = m.color;
+    tctx.fillText(m.temp, barX - 4, my + 3);
+  }
+  tctx.setLineDash([]);
+
+  const tempEl = document.getElementById('avgTemp');
+  tempEl.textContent = Math.round(currentGraphTemp) + '°C';
+  const warnRow = document.getElementById('tempWarning');
+  const warnLabel = document.getElementById('tempWarningLabel');
+  if (currentGraphTemp >= 200) {
+    tempEl.style.color = '#FF5252';
+    tempEl.style.textShadow = '0 0 14px rgba(255,82,82,0.8)';
+    tempEl.style.background = 'rgba(255,82,82,0.1)';
+    warnRow.className = 'temp-warning-row hidden';
+  } else if (currentGraphTemp >= 180) {
+    tempEl.style.color = '#FFD54F';
+    tempEl.style.textShadow = '0 0 12px rgba(255,213,79,0.7)';
+    tempEl.style.background = 'rgba(255,152,0,0.1)';
+    warnRow.className = 'temp-warning-row hidden';
+  } else {
+    tempEl.style.color = '#4FC3F7';
+    tempEl.style.textShadow = '0 0 10px rgba(79,195,247,0.6)';
+    tempEl.style.background = 'rgba(0,0,0,0.3)';
+    warnRow.className = 'temp-warning-row hidden';
+    warnLabel.className = 'temp-warning-label hidden';
+  }
+}
+
+function getUraniumTimer() {
+  const min = currentGraphTemp >= 250 ? URANIUM_TIMER_ACCIDENT_MIN : URANIUM_TIMER_MIN;
+  const max = currentGraphTemp >= 250 ? URANIUM_TIMER_ACCIDENT_MAX : URANIUM_TIMER_MAX;
+  return min + Math.random() * (max - min);
 }
 
 function getWaterColor(temp) {
@@ -219,6 +385,25 @@ function getWaterColor(temp) {
 function update(dt) {
   const moveStep = ROD_SPEED * dt / 1000;
 
+  if (currentGraphTemp >= 250 && !rodsBroken) {
+    rodsBroken = true;
+    rodTargetEven = 0;
+    rodTargetOdd = 0;
+    document.getElementById('rodSliderEven').disabled = true;
+    document.getElementById('rodSliderEven').value = 0;
+    document.getElementById('rodValueEven').textContent = 'Сломано!';
+    document.getElementById('rodSliderOdd').disabled = true;
+    document.getElementById('rodSliderOdd').value = 100;
+    document.getElementById('rodValueOdd').textContent = 'Сломано!';
+    document.getElementById('rodSliderAll').disabled = true;
+    document.getElementById('rodSliderAll').value = 0;
+    document.getElementById('rodValueAll').textContent = 'Сломано!';
+  }
+  if (rodsBroken) {
+    rodTargetEven = 0;
+    rodTargetOdd = 0;
+  }
+
   if (rodTargetEven > rodCurrentEven) {
     rodCurrentEven = Math.min(rodTargetEven, rodCurrentEven + moveStep);
   } else if (rodTargetEven < rodCurrentEven) {
@@ -229,6 +414,23 @@ function update(dt) {
     rodCurrentOdd = Math.min(rodTargetOdd, rodCurrentOdd + moveStep);
   } else if (rodTargetOdd < rodCurrentOdd) {
     rodCurrentOdd = Math.max(rodTargetOdd, rodCurrentOdd - moveStep);
+  }
+
+  const turbineStep = 10 * dt / 1000;
+  if (currentGraphTemp >= 250) {
+    turbineBroken = true;
+    turbineTarget = 0;
+    document.getElementById('turbineSlider').disabled = true;
+    document.getElementById('turbineSlider').value = 0;
+    document.getElementById('turbineValue').textContent = 'Сломано!';
+  }
+  if (turbineBroken) {
+    turbineTarget = 0;
+  }
+  if (turbineTarget > turbineCurrent) {
+    turbineCurrent = Math.min(turbineTarget, turbineCurrent + turbineStep);
+  } else if (turbineTarget < turbineCurrent) {
+    turbineCurrent = Math.max(turbineTarget, turbineCurrent - turbineStep);
   }
 
   if (autoMode) {
@@ -288,7 +490,7 @@ function update(dt) {
 
       if (grid[row][col] === 2) {
         grid[row][col] = 0;
-        timers[row][col] = URANIUM_TIMER_MIN + Math.random() * (URANIUM_TIMER_MAX - URANIUM_TIMER_MIN);
+        timers[row][col] = getUraniumTimer();
         xenonTimer[row][col] = getXenonTimer(waterTemp[row][col]);
         xenonDecay[row][col] = 0;
         neutrons.splice(i, 1);
@@ -297,7 +499,7 @@ function update(dt) {
 
       if (grid[row][col] === 1) {
         grid[row][col] = 0;
-        timers[row][col] = URANIUM_TIMER_MIN + Math.random() * (URANIUM_TIMER_MAX - URANIUM_TIMER_MIN);
+        timers[row][col] = getUraniumTimer();
         xenonTimer[row][col] = getXenonTimer(waterTemp[row][col]);
         xenonDecay[row][col] = 0;
         waterTemp[row][col] = Math.min(100, waterTemp[row][col] + FISSION_HEAT_BONUS);
@@ -318,7 +520,7 @@ function update(dt) {
     }
   }
 
-  const turbineRPM = turbineMax > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineMax : 0;
+  const turbineRPM = turbineCurrent > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineCurrent : 0;
   const turbineCool = (turbineRPM / 100) * TURBINE_COOL_MAX;
   if (turbineCool > 0) {
     for (let r = 0; r < ROWS; r++) {
@@ -393,7 +595,7 @@ function update(dt) {
         xenonDecay[r][c] -= dt;
         if (xenonDecay[r][c] <= 0) {
           grid[r][c] = 0;
-          timers[r][c] = URANIUM_TIMER_MIN + Math.random() * (URANIUM_TIMER_MAX - URANIUM_TIMER_MIN);
+          timers[r][c] = getUraniumTimer();
           xenonTimer[r][c] = getXenonTimer(waterTemp[r][c]);
           xenonDecay[r][c] = 0;
         }
@@ -467,7 +669,7 @@ function draw() {
   for (let ri = 0; ri < ROD_POSITIONS.length; ri++) {
     const rodX = getRodX(ROD_POSITIONS[ri]);
     const isEven = (ri + 1) % 2 === 0;
-    const rodHeight = Math.floor(((isEven ? rodCurrentEven : rodCurrentOdd) / 100) * ROWS);
+    const rodHeight = ((isEven ? rodCurrentEven : rodCurrentOdd) / 100) * ROWS;
     ctx.fillRect(rodX - ROD_WIDTH / 2, 0, ROD_WIDTH, rodHeight * STEP);
   }
 
@@ -510,13 +712,17 @@ function drawGraph() {
     warningEl.className = 'warning hidden';
   }
 
-  document.getElementById('neutronCount').textContent = 'Neutrons: ' + neutrons.length;
-  document.getElementById('avgTemp').textContent = 'Temperature: ' + Math.round(currentGraphTemp) + '°C';
+  document.getElementById('neutronCount').textContent = neutrons.length;
 
-  const displayRPM = turbineMax > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineMax : 0;
-  document.getElementById('turbineRPM').textContent = 'RPM: ' + Math.round(displayRPM * 15);
-  document.getElementById('turbinePower').textContent = 'Power: ' + Math.round(displayRPM * TURBINE_POWER_FACTOR) + ' MW';
-  document.getElementById('turbinePercent').textContent = Math.round(displayRPM) + '%';
+  const mobileNeutronsEl = document.getElementById('mobileNeutrons');
+  const mobileTempEl = document.getElementById('mobileTemp');
+  if (mobileNeutronsEl) mobileNeutronsEl.textContent = neutrons.length;
+  if (mobileTempEl) mobileTempEl.textContent = Math.round(currentGraphTemp) + '°C';
+
+  const displayRPM = turbineCurrent > 0 ? Math.max(0, Math.min(1, (currentGraphTemp - TURBINE_TEMP_MIN) / (TURBINE_TEMP_MAX - TURBINE_TEMP_MIN))) * turbineCurrent : 0;
+  document.getElementById('turbineRPM').textContent = 'Об/мин: ' + Math.round(displayRPM * 15);
+  document.getElementById('turbinePower').textContent = 'Мощность: ' + Math.round(displayRPM * TURBINE_POWER_FACTOR) + ' МВт';
+  document.getElementById('turbinePercent').textContent = 'Мощность турбины: ' + Math.round(displayRPM) + '%';
 
   if (!gameOver) {
     const currentPower = Math.round(displayRPM * TURBINE_POWER_FACTOR);
@@ -536,8 +742,8 @@ function drawGraph() {
 
     document.getElementById('roundDisplay').textContent = (currentRound + 1) + '/3';
     document.getElementById('roundTimerDisplay').textContent = Math.ceil(roundTimer / 1000);
-    document.getElementById('targetValue').textContent = Math.round(targetValue) + ' MW';
-    document.getElementById('currentPowerDisplay').textContent = currentPower + ' MW';
+    document.getElementById('targetValue').textContent = Math.round(targetValue) + ' МВт';
+    document.getElementById('currentPowerDisplay').textContent = currentPower + ' МВт';
     document.getElementById('scoreDisplay').textContent = Math.round(score);
   }
 
@@ -564,9 +770,9 @@ function drawGraph() {
 
   graphCtx.textAlign = 'left';
   graphCtx.fillStyle = '#4FC3F7';
-  graphCtx.fillText('Neutrons', w - 70, 12);
+  graphCtx.fillText('Нейтроны', w - 70, 12);
   graphCtx.fillStyle = '#FF9800';
-  graphCtx.fillText('Temp', w - 70, 24);
+  graphCtx.fillText('Темп.', w - 70, 24);
 
   if (neutronHistory.length > 1) {
     graphCtx.beginPath();
@@ -603,6 +809,8 @@ function loop(timestamp) {
   draw();
   drawGraph();
   drawFan();
+  drawNeutronSphere();
+  drawTempGauge();
   frameCount++;
   requestAnimationFrame(loop);
 }
@@ -640,8 +848,8 @@ document.getElementById('rodSliderAll').addEventListener('input', (e) => {
 });
 
 document.getElementById('turbineSlider').addEventListener('input', (e) => {
-  turbineMax = parseInt(e.target.value);
-  document.getElementById('turbineValue').textContent = turbineMax + '%';
+  turbineTarget = parseInt(e.target.value);
+  document.getElementById('turbineValue').textContent = turbineTarget + '%';
 });
 
 document.getElementById('btnContinue').addEventListener('click', () => {
@@ -665,6 +873,22 @@ document.getElementById('helpToggle').addEventListener('click', () => {
 
 document.getElementById('helpClose').addEventListener('click', () => {
   document.getElementById('helpPanel').classList.add('hidden');
+});
+
+document.getElementById('settingsToggle').addEventListener('click', () => {
+  document.getElementById('settingsPanel').classList.toggle('hidden');
+});
+
+document.getElementById('settingsClose').addEventListener('click', () => {
+  document.getElementById('settingsPanel').classList.add('hidden');
+});
+
+document.getElementById('leftColSlider').addEventListener('input', (e) => {
+  const left = parseInt(e.target.value);
+  const right = 90 - left;
+  document.getElementById('leftColValue').textContent = left + '%';
+  document.querySelector('.left-panel').style.flex = '0 0 ' + left + '%';
+  document.querySelector('.right-panel').style.flex = '0 0 ' + right + '%';
 });
 
 init();

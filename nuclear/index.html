@@ -3,11 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nuclear Reactor Simulation</title>
+  <title>Симуляция ядерного реактора</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <button id="helpToggle" class="help-toggle">?</button>
+  <button id="settingsToggle" class="settings-toggle">&#9881;</button>
+  <div id="settingsPanel" class="settings-panel hidden">
+    <div class="settings-header">
+      <h3>Настройки</h3>
+      <button id="settingsClose" class="help-close">&times;</button>
+    </div>
+    <div class="settings-content">
+      <div class="setting-row">
+        <label>Левая колонка:</label>
+        <input type="range" id="leftColSlider" min="20" max="70" value="50">
+        <span id="leftColValue">50%</span>
+      </div>
+    </div>
+  </div>
   <div id="helpPanel" class="help-panel hidden">
     <div class="help-header">
       <h3>Как играть</h3>
@@ -18,10 +32,10 @@
 
       <p><b>Стержни:</b></p>
       <ul>
-        <li><b>#1 Rods</b> — управляет чётными стержнями (2, 4, 6...)</li>
-        <li><b>#2 Rods</b> — управляет нечётными стержнями (1, 3, 5...)</li>
-        <li><b>All Rods</b> — управляет всеми стержнями</li>
-        <li><b>Auto</b> — автоматическое управление по температуре</li>
+        <li><b>Стержни #1</b> — управляет чётными стержнями (2, 4, 6...)</li>
+        <li><b>Стержни #2</b> — управляет нечётными стержнями (1, 3, 5...)</li>
+        <li><b>Все стержни</b> — управляет всеми стержнями</li>
+        <li><b>Авто</b> — автоматическое управление по температуре</li>
       </ul>
       <p>Стержни поглощают нейтроны и замедляют деление урана.</p>
 
@@ -54,60 +68,75 @@
       </ul>
     </div>
   </div>
-  <h1>Nuclear Reactor Simulation</h1>
+  <h1>Симуляция ядерного реактора</h1>
   <div id="warning" class="warning hidden"></div>
   <div class="main-layout">
     <div class="left-panel">
       <canvas id="reactor"></canvas>
       <canvas id="graph"></canvas>
-      <div class="stats">
-        <span id="neutronCount">Neutrons: 0</span>
-        <span id="avgTemp">Temperature: 0°C</span>
-      </div>
-      <div class="controls">
-        <button id="reset">Reset</button>
-        <button id="autoBtn">Auto</button>
-        <div class="rod-control">
-          <label>#1 Rods:</label>
-          <input type="range" id="rodSliderEven" min="0" max="100" value="0">
-          <span class="rod-value" id="rodValueEven">0%</span>
-        </div>
-        <div class="rod-control">
-          <label>#2 Rods:</label>
-          <input type="range" id="rodSliderOdd" min="0" max="100" value="100">
-          <span class="rod-value" id="rodValueOdd">100%</span>
-        </div>
-      </div>
       <div class="legend">
-        <span><span style="color:#000;">●</span> Neutron</span>
-        <span><span style="color:#1976D2;">●</span> Uranium-235</span>
-        <span><span style="color:#999;">●</span> Spent Fuel</span>
-        <span><span style="color:#1a1a1a;">⬤</span> Xenon-135</span>
-        <span><span style="color:#333;">|</span> Control Rod</span>
-        <span><span style="color:#4FC3F7;">■</span> Water (cold)</span>
-        <span><span style="color:#F44336;">■</span> Water (hot)</span>
+        <span><span style="color:#000;">●</span> Нейтрон</span>
+        <span><span style="color:#1976D2;">●</span> Уран-235</span>
+        <span><span style="color:#999;">●</span> Отработанное топливо</span>
+        <span><span style="color:#1a1a1a;">⬤</span> Ксенон-135</span>
+        <span><span style="color:#333;">|</span> Управл. стержень</span>
+        <span><span style="color:#4FC3F7;">■</span> Вода (холодная)</span>
+        <span><span style="color:#F44336;">■</span> Вода (горячая)</span>
+      </div>
+    </div>
+    <div class="center-panel">
+      <div class="neutron-card">
+        <div class="neutron-card-header">
+          <span class="neutron-label">Нейтрон</span>
+          <span id="neutronCount" class="neutron-value">0</span>
+        </div>
+        <canvas id="neutronSphere" width="120" height="120"></canvas>
+      </div>
+      <div class="temp-card">
+        <div class="temp-card-header">Температура</div>
+        <div class="thermometer-container">
+          <canvas id="tempGauge" width="60"></canvas>
+        </div>
+        <span id="avgTemp" class="temp-value">24°C</span>
+        <div id="tempWarning" class="temp-warning-row hidden">
+          <span id="tempWarningLabel" class="temp-warning-label"></span>
+        </div>
       </div>
     </div>
     <div class="right-panel">
-      <div class="rod-control right-rod-control">
-        <label>All Rods:</label>
+      <div class="controls-row">
+        <button id="reset">Сброс</button>
+        <button id="autoBtn">Авто</button>
+      </div>
+      <div class="rod-control">
+        <label>Стержни #1:</label>
+        <input type="range" id="rodSliderEven" min="0" max="100" value="0">
+        <span class="rod-value" id="rodValueEven">0%</span>
+      </div>
+      <div class="rod-control">
+        <label>Стержни #2:</label>
+        <input type="range" id="rodSliderOdd" min="0" max="100" value="100">
+        <span class="rod-value" id="rodValueOdd">100%</span>
+      </div>
+      <div class="rod-control">
+        <label>Все стержни:</label>
         <input type="range" id="rodSliderAll" min="0" max="100" value="100">
         <span class="rod-value" id="rodValueAll">100%</span>
       </div>
       <div class="turbine-section">
-        <div class="turbine-controls">
-          <div class="rod-control">
-            <label>Turbine:</label>
-            <input type="range" id="turbineSlider" min="0" max="100" value="0">
-            <span class="rod-value" id="turbineValue">0%</span>
-          </div>
-      <div class="turbine-stats">
-        <span id="turbineRPM">RPM: 0</span>
-        <span id="turbinePower">Power: 0 MW</span>
-        <span id="turbinePercent">0%</span>
-      </div>
+        <div class="rod-control">
+          <label>Турбина:</label>
+          <input type="range" id="turbineSlider" min="0" max="100" value="0">
+          <span class="rod-value" id="turbineValue">0%</span>
         </div>
-        <canvas id="fanCanvas" width="70" height="70"></canvas>
+        <div class="turbine-bottom">
+          <div class="turbine-stats">
+            <span id="turbineRPM">Об/мин: 0</span>
+            <span id="turbinePower">Мощность: 0 МВт</span>
+            <span id="turbinePercent">Мощность турбины: 0%</span>
+          </div>
+          <canvas id="fanCanvas" width="70" height="70"></canvas>
+        </div>
       </div>
       <div id="scorePanel" class="score-panel">
         <div id="scoreStatus" class="score-status bad">Ожидание</div>
@@ -121,7 +150,7 @@
         </div>
         <div class="score-row">
           <span class="score-label">Нужное значение:</span>
-          <span id="targetValue" class="score-value">800 MW</span>
+          <span id="targetValue" class="score-value">800 МВт</span>
         </div>
         <div class="score-row">
           <span class="score-label">Текущее значение:</span>
@@ -130,6 +159,16 @@
         <div class="score-row">
           <span class="score-label">Очки:</span>
           <span id="scoreDisplay" class="score-value">0</span>
+        </div>
+        <div class="mobile-stats">
+          <div class="score-row">
+            <span class="score-label">Нейтроны:</span>
+            <span id="mobileNeutrons" class="score-value">0</span>
+          </div>
+          <div class="score-row">
+            <span class="score-label">Температура:</span>
+            <span id="mobileTemp" class="score-value">24°C</span>
+          </div>
         </div>
       </div>
     </div>
